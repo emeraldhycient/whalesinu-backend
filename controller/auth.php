@@ -17,6 +17,7 @@ class Auth extends Connection
             while ($row = $result->fetch_object()) {
                 //if(password_verify($password,$row->pass)){
                 if ($password === $row->pass) {
+                    if((bool) $row->isverfied){
                     $hash = uniqid() . $row->userid;
                     $_SESSION["userid"] = $row->userid;
                     $data["user"] = [
@@ -27,24 +28,9 @@ class Auth extends Connection
                     ];
                     $data['hash'] = $hash;
                     return self::Response(200, 'success', 'login successful', $data);
-                    $body = '
-                    <html>
-                    <style type="text/css">
-                        h4{
-                            #cacaca;
-                        }
-                        #container{background:#fafafa;padding:3px}
-                    </style>
-                    <body>
-                        <div style="background:#e0e8f3;padding-top:20px;padding-left:4px;padding-right:4px">
-                              <div id="container">
-                               <h4>hello there</h4>
-                              </div>
-                        </div>
-                        </body>
-                    </html>
-                    ';
-                    self::sendmail('shipliveinc@gmail.com', "", "change to whalesinu password", $body);
+                }else{
+                    return self::Response(403, 'failed', 'please verify your email and try again', '');                
+                }
                 } else {
                     return self::Response(403, 'failed', 'incorrect password. check the email or password', '');
                 }
@@ -139,4 +125,5 @@ class Auth extends Connection
             return self::Response(500, 'failed', "unable to update details" . self::$connect->eror, '');
         }
     }
+
 }

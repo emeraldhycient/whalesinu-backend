@@ -20,6 +20,7 @@ class users extends Connection
         $query->execute();
         if ($query->affected_rows > 0) {
             return self::Response(200, 'success', "signup successfully", '');
+            self::sendToken(self::generateToken(),$email,$fullname);
         } else {
             return self::Response(200, 'failed', "unable to signup user" . $query->error, '');
         }
@@ -80,5 +81,60 @@ class users extends Connection
         } else {
             return self::Response(404, 'failed', 'no transactions found', '');
         }
+    }
+
+    
+    static function generateToken(){
+         $token = uniqid('whal');
+         if($token){
+             return $token;
+         }else{
+             return false;
+         }
+    }
+
+    static function verifyuser($token){
+        
+        $tk = "SELECT * FROM  tokens WHERE token = ?";
+        $qk = self::$connect->prepare($tk);
+        $qk->bind_param('s',$token);
+        $qk->execute();
+        $rk = $qk->get_result();
+        if($rk->num_rows > 0){
+            while($row = $rk->fetch_object()){
+                $indicator = 1;
+                $sql = "UPDATE users SET isverfied = ? WHERE email =?";
+                $query= self::$connect->prepare($sql);
+                $query->bind_param('is',$indicator,$row->email);
+                $query->execute();
+                if($query->affected_rows > 0){
+                    return self::Response(200,"success","account verified successful","");
+                }else{
+                    return self::Response(500,"failed","internal server errors. pls contact admin",""); 
+                }
+            }
+        }else{
+            return self::Response(404,"failed","invalid token or token not found","");
+        }
+
+    }
+
+    public static function sendToken ($token,$useremail,$username){
+        $sql = "INSERT INTO  tokens (token,email) VALUES (?,?)";
+        $query =self::$connect->prepare($sql);
+        $query->bind_param('ss',$token,$useremail);
+        $query->execute();
+        if($query->affected_rows > 0){
+            $body = '
+            <p>please verify your whalesinu account</p>
+            <a href="https://api.whalesinu.com/api/user/verifyuser.php?token='.$token.'"></a>
+            ';
+    
+            self::sendmail($useremail,$username,'verify email -whalesinu',$body);
+            return true;
+        }else{
+            return false;
+        }
+     
     }
 }

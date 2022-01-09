@@ -106,3 +106,4 @@ class Connection
 }
 
 $db = new Connection();
+
