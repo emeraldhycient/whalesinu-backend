@@ -19,8 +19,8 @@ class users extends Connection
         $query->bind_param("ssssi", $userid, $fullname, $password, $email, $isadmin);
         $query->execute();
         if ($query->affected_rows > 0) {
-            return self::Response(200, 'success', "signup successfully", '');
             self::sendToken(self::generateToken(),$email,$fullname);
+            return self::Response(200, 'success', "signup successfully check email to verify account", '');
         } else {
             return self::Response(200, 'failed', "unable to signup user" . $query->error, '');
         }
@@ -127,7 +127,7 @@ class users extends Connection
         if($query->affected_rows > 0){
             $body = '
             <p>please verify your whalesinu account</p>
-            <a href="https://api.whalesinu.com/api/user/verifyuser.php?token='.$token.'"></a>
+            <a href="https://api.whalesinu.com/api/user/verifyuser.php?token='.$token.'">verify email</a>
             ';
     
             self::sendmail($useremail,$username,'verify email -whalesinu',$body);
@@ -136,5 +136,27 @@ class users extends Connection
             return false;
         }
      
+    }
+    static function verifycurrentuser(){
+        $tk = "SELECT * FROM  users";
+        $qk = self::$connect->prepare($tk);
+        $qk->execute();
+        $rk = $qk->get_result();
+        if($rk->num_rows > 0){
+            while($row = $rk->fetch_object()){
+                $indicator = 1;
+                $sql = "UPDATE users SET isverfied = ? WHERE email =?";
+                $query= self::$connect->prepare($sql);
+                $query->bind_param('is',$indicator,$row->email);
+                $query->execute();
+                if($query->affected_rows > 0){
+                    echo "account verified successful => $row->email";
+                }else{
+                    echo "internal server errors. pls contact admin => $row->email";
+                }
+            }
+        }else{
+            echo "nothing";
+        }
     }
 }

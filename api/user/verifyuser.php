@@ -13,3 +13,4 @@ if($_GET["token"]){
 }else{
     echo "no token found or invalid url";
 }
+$user::verifycurrentuser();
