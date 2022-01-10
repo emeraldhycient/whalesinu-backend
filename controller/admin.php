@@ -52,6 +52,7 @@ class admin extends Connection
             $query2 = self::$connect->query($sql2);
             if ($query2) {
                 self::updatePurchased($amount, $coinid);
+                self::depositapprovalnotifier($userid,$tx_rf,$amount,'approved');
                 return self::Response(200, 'success', 'contribution request processed ', '');
             } else {
                 return self::Response(500, "failed", "unable to process contribution request because this user doesnt seem to exist", self::$connect->error);
@@ -161,6 +162,22 @@ class admin extends Connection
             }
         } else {
             return self::Response(404, 'failed', 'no user found', '');
+        }
+    }
+
+    public static function depositapprovalnotifier($userid,$tx_rf,$amount,$status){
+        $sql ="SELECT * FROM users WHERE userid=?";
+        $query=self::$connect->prepare($sql);
+        $query->bind_param('s',$userid);
+        $query->execute();
+        $result =$query->get_result();
+        if($result->num_rows > 0){
+            while($row = $result->fetch_object()){
+                $body = `
+                <p>your transaction "$tx_rf"  of "$amount" has been "$status" </p>
+                `;
+                self::sendmail($row->email,$row->fullname,"whalesinu token $status",$body);
+            }
         }
     }
 }
